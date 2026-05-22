@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum TokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum ProductCategory {
+  LAPTOP
+  PHONE
+  PAD
+}
+
+enum ProductAvailability {
+  AVAILABLE
+  PENDING
+  SOLD
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatRooms ChatRoom[]
+  messages  Message[]
+}
+
+model OtpToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String
+  expiresAt DateTime
+  type      TokenType
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  title         String
+  subtitle      String?
+  description   String
+  price         Decimal
+  condition     String
+  batteryHealth String?
+  storage       String?
+  variant       String?
+  images        String[]
+  category      ProductCategory     @default(PHONE)
+  availability  ProductAvailability @default(AVAILABLE)
+  isFeatured    Boolean             @default(false)
+  createdAt     DateTime            @default(now())
+  deletedAt     DateTime?
+}
+
+model ChatRoom {
+  id         String   @id @default(cuid())
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer User      @relation(fields: [customerId], references: [id])
+  messages Message[]
+
+  @@unique([customerId]) // Ensuring one active chatroom per customer
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  senderId   String
+  text       String
+  createdAt  DateTime @default(now())
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id])
+  sender   User     @relation(fields: [senderId], references: [id])
+}
+
+model ProofOfTransaction {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+}
