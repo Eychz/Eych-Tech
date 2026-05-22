@@ -21,7 +21,7 @@ export class AuthService {
     await AuthRepository.saveOtp(email, otp, 'VERIFY_EMAIL');
 
     const { error } = await resend.emails.send({
-      from: '"eych.tech@business" <onboarding@resend.dev>',
+      from: `"eych.tech@business" <onboarding@${process.env.EMAIL_FROM}>`,
       to: email,
       subject: `Verify your email: ${otp}`,
       html: `
@@ -74,7 +74,7 @@ export class AuthService {
       await AuthRepository.saveOtp(email, otp, 'VERIFY_EMAIL');
 
       const { error } = await resend.emails.send({
-        from: '"eych.tech@business" <onboarding@resend.dev>',
+        from: `"eych.tech@business" <onboarding@${process.env.EMAIL_FROM}>`,
         to: email,
         subject: `Verify your email: ${otp}`,
         html: `
@@ -110,7 +110,7 @@ export class AuthService {
     await AuthRepository.saveOtp(email, otp, 'RESET_PASSWORD');
 
     const { error } = await resend.emails.send({
-      from: '"eych.tech@business" <onboarding@resend.dev>',
+      from: `"eych.tech@business" <onboarding@${process.env.EMAIL_FROM}>`,
       to: email,
       subject: `Password Reset Code: ${otp}`,
       html: `
