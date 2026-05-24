@@ -32,6 +32,7 @@ export async function Header() {
             <Link href="/phone" className="text-apple-slate hover:text-apple-blue transition-colors">Phone</Link>
             <Link href="/proofs" className="text-apple-slate hover:text-apple-blue transition-colors">Transactions</Link>
             <Link href="/how-to-order" className="text-apple-slate hover:text-apple-blue transition-colors">How to Order</Link>
+            <Link href="/sell-gadget" className="text-apple-slate hover:text-apple-blue transition-colors">Sell my Gadget</Link>
           </nav>
         </div>
 

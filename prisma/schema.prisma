@@ -101,3 +101,26 @@ model ProofOfTransaction {
   imageUrl    String
   createdAt   DateTime @default(now())
 }
+
+enum SellRequestStatus {
+  PENDING
+  REVIEWED
+  REJECTED
+}
+
+model SellRequest {
+  id            String            @id @default(cuid())
+  images        String[]
+  location      String
+  batteryHealth String
+  storage       String
+  existingIssue String?
+  repairHistory String?
+  price         Decimal
+  underWarranty Boolean
+  inclusions    String
+  contacts      String
+  status        SellRequestStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}

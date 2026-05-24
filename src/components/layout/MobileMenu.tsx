@@ -16,6 +16,7 @@ export function MobileMenu() {
     { href: '/phone', label: 'Phone' },
     { href: '/proofs', label: 'Transactions' },
     { href: '/how-to-order', label: 'How to Order' },
+    { href: '/sell-gadget', label: 'Sell my Gadget' },
   ];
 
   const handleLinkClick = () => {

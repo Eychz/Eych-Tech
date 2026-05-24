@@ -72,6 +72,12 @@ export function AdminDashboard({ products }: AdminDashboardProps) {
             Transactions
           </button>
           <button
+            onClick={() => router.push('/admin/sell-requests')}
+            className="bg-white hover:bg-black/5 text-apple-slate border border-black/10 px-5 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2 shadow-sm"
+          >
+            Sell Requests
+          </button>
+          <button
             onClick={() => router.push('/admin/messages')}
             className="bg-white hover:bg-black/5 text-apple-slate border border-black/10 px-5 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2 shadow-sm relative group"
           >
