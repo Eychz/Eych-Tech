@@ -3,10 +3,11 @@ import { ProductInput, UpdateProductInput } from '@/schemas/product.schema';
 import { ProductCategory } from '@prisma/client';
 
 export class ProductRepository {
-  static async getAllActiveProducts(category?: ProductCategory, searchQuery?: string) {
+  static async getAllActiveProducts(category?: ProductCategory, searchQuery?: string, availableOnly = false) {
     return prisma.product.findMany({
       where: {
         deletedAt: null,
+        ...(availableOnly ? { availability: 'AVAILABLE' } : {}),
         ...(category ? { category } : {}),
         ...(searchQuery ? {
           OR: [

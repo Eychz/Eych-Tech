@@ -70,7 +70,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
               )}
 
               <div className="text-4xl font-semibold text-apple-slate mb-8">
-                ₱{Number(product.price).toFixed(2)}
+                ₱{Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
               </div>
 
               {/* Description */}

@@ -4,27 +4,23 @@ import prisma from '@/lib/db';
 import { verifySession } from '@/lib/session';
 
 /**
- * Ensures the logged-in customer has a ChatRoom.
- * Returns the ChatRoom ID.
+ * Ensures a guest ChatRoom exists for the given guestId.
+ * No login required — any visitor with a guestId can get a room.
  */
-export async function getOrCreateRoomAction() {
-  const session = await verifySession();
-  if (!session || !session.userId) {
-    return { error: 'Unauthorized' };
+export async function getOrCreateRoomAction(guestId: string) {
+  if (!guestId || guestId.trim() === '') {
+    return { error: 'Invalid guest ID.' };
   }
 
-  // Admin doesn't get a personal room
-  if (session.role === 'ADMIN') {
-    return { error: 'Admins do not have personal chat rooms' };
-  }
+  const guestName = `Guest-${guestId.substring(0, 8)}`;
 
   let room = await prisma.chatRoom.findUnique({
-    where: { customerId: session.userId },
+    where: { guestId },
   });
 
   if (!room) {
     room = await prisma.chatRoom.create({
-      data: { customerId: session.userId },
+      data: { guestId, guestName },
     });
   }
 
@@ -33,7 +29,6 @@ export async function getOrCreateRoomAction() {
 
 /**
  * Returns all chat rooms for the Admin, ordered by most recently updated.
- * Includes the latest message and customer email.
  */
 export async function getAdminRoomsAction() {
   const session = await verifySession();
@@ -44,7 +39,6 @@ export async function getAdminRoomsAction() {
   const rooms = await prisma.chatRoom.findMany({
     orderBy: { updatedAt: 'desc' },
     include: {
-      customer: { select: { email: true } },
       messages: {
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -57,11 +51,13 @@ export async function getAdminRoomsAction() {
 
 /**
  * Returns all messages for a given ChatRoom.
- * Validates that the user is either the customer of the room or an Admin.
+ * Accessible by the guest who owns the room (via guestId) OR an Admin.
  */
-export async function getMessagesAction(roomId: string) {
+export async function getMessagesAction(roomId: string, guestId?: string) {
   const session = await verifySession();
-  if (!session || !session.userId) {
+  const isAdmin = session?.role === 'ADMIN';
+
+  if (!isAdmin && !guestId) {
     return { error: 'Unauthorized' };
   }
 
@@ -73,15 +69,14 @@ export async function getMessagesAction(roomId: string) {
     return { error: 'Chat room not found' };
   }
 
-  // Ensure access
-  if (session.role !== 'ADMIN' && room.customerId !== session.userId) {
+  // Guests can only access their own room
+  if (!isAdmin && room.guestId !== guestId) {
     return { error: 'Unauthorized access to chat room' };
   }
 
   const messages = await prisma.message.findMany({
     where: { chatRoomId: roomId },
     orderBy: { createdAt: 'asc' },
-    include: { sender: { select: { role: true } } },
   });
 
   return { messages };
@@ -89,10 +84,13 @@ export async function getMessagesAction(roomId: string) {
 
 /**
  * Sends a new message in the ChatRoom.
+ * Guest sends with guestId; Admin sends with session.
  */
-export async function sendMessageAction(roomId: string, text: string) {
+export async function sendMessageAction(roomId: string, text: string, guestId?: string) {
   const session = await verifySession();
-  if (!session || !session.userId) {
+  const isAdmin = session?.role === 'ADMIN';
+
+  if (!isAdmin && !guestId) {
     return { error: 'Unauthorized' };
   }
 
@@ -108,8 +106,8 @@ export async function sendMessageAction(roomId: string, text: string) {
     return { error: 'Chat room not found' };
   }
 
-  // Ensure access
-  if (session.role !== 'ADMIN' && room.customerId !== session.userId) {
+  // Verify access
+  if (!isAdmin && room.guestId !== guestId) {
     return { error: 'Unauthorized access to chat room' };
   }
 
@@ -117,7 +115,9 @@ export async function sendMessageAction(roomId: string, text: string) {
     data: {
       text: text.trim(),
       chatRoomId: roomId,
-      senderId: session.userId,
+      senderId: isAdmin ? session!.userId : null,
+      guestId: isAdmin ? null : guestId,
+      isAdmin: isAdmin,
     },
   });
 

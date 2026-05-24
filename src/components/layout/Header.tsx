@@ -36,19 +36,13 @@ export async function Header() {
 
         <div className="flex items-center gap-4">
           <SearchBar />
-          {session ? (
+          {session?.role === 'ADMIN' && (
             <div className="flex items-center gap-4">
-              {session.role === 'ADMIN' && (
-                <Link href="/admin" className="text-apple-blue hover:text-apple-blue-hover transition-colors text-xs font-medium">
-                  Admin Dashboard
-                </Link>
-              )}
+              <Link href="/admin" className="text-apple-blue hover:text-apple-blue-hover transition-colors text-xs font-medium">
+                Admin Dashboard
+              </Link>
               <LogoutButton />
             </div>
-          ) : (
-            <Link href="/login" className="text-apple-slate hover:text-apple-blue transition-colors text-xs font-medium">
-              Sign In
-            </Link>
           )}
           <MobileMenu />
         </div>

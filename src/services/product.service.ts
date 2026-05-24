@@ -3,8 +3,8 @@ import { ProductInput, UpdateProductInput } from '@/schemas/product.schema';
 import { ProductCategory } from '@prisma/client';
 
 export class ProductService {
-  static async getStoreProducts(category?: ProductCategory, searchQuery?: string) {
-    return ProductRepository.getAllActiveProducts(category, searchQuery);
+  static async getStoreProducts(category?: ProductCategory, searchQuery?: string, availableOnly = true) {
+    return ProductRepository.getAllActiveProducts(category, searchQuery, availableOnly);
   }
 
   static async getAdminProducts(searchQuery?: string) {

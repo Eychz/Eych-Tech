@@ -38,7 +38,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  chatRooms ChatRoom[]
   messages  Message[]
 }
 
@@ -69,26 +68,26 @@ model Product {
 }
 
 model ChatRoom {
-  id         String   @id @default(cuid())
-  customerId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  guestId   String   @unique  // UUID stored in guest's localStorage
+  guestName String   @default("Guest") // Short display label e.g. "Guest-8f3a"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  customer User      @relation(fields: [customerId], references: [id])
-  messages Message[]
-
-  @@unique([customerId]) // Ensuring one active chatroom per customer
+  messages  Message[]
 }
 
 model Message {
   id         String   @id @default(cuid())
   chatRoomId String
-  senderId   String
+  senderId   String?  // Admin's userId (null for guest messages)
+  guestId    String?  // Guest UUID (null for admin messages)
+  isAdmin    Boolean  @default(false)
   text       String
   createdAt  DateTime @default(now())
 
-  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id])
-  sender   User     @relation(fields: [senderId], references: [id])
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
+  sender     User?    @relation(fields: [senderId], references: [id])
 }
 
 model ProofOfTransaction {

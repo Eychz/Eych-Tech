@@ -2,120 +2,116 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getMessagesAction, sendMessageAction } from '@/controllers/chat.controller';
-import { Send, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Send, Loader2, ExternalLink } from 'lucide-react';
+import { getOrCreateGuestId } from '@/lib/guestId';
 
 type Message = {
   id: string;
   text: string;
-  senderId: string;
+  guestId: string | null;
+  isAdmin: boolean;
   createdAt: Date;
-  sender: { role: 'ADMIN' | 'CUSTOMER' };
 };
+
+const TIKTOK_URL = 'https://www.tiktok.com/@eych.tech';
+const FACEBOOK_URL = 'https://facebook.com/GadgetEych';
 
 export function CustomerChat({
   roomId,
   prefillProduct,
-  currentUserId
 }: {
   roomId: string;
-  prefillProduct: any;
-  currentUserId: string;
+  prefillProduct?: { title: string; price: number } | null;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [guestId, setGuestId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
-  // Initial Prefill
+  // Initialize guestId on mount
+  useEffect(() => {
+    const id = getOrCreateGuestId();
+    setGuestId(id);
+  }, []);
+
+  // Prefill message when product is passed
   useEffect(() => {
     if (prefillProduct && messages.length === 0 && !loading) {
-      setInput(`Hi! I'm interested in negotiating for the ${prefillProduct.title} (₱${Number(prefillProduct.price).toFixed(2)}).`);
-      // Remove ?product from URL cleanly
-      router.replace('/messages', { scroll: false });
+      const price = Number(prefillProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+      setInput(`Hi! I'm interested in negotiating for the ${prefillProduct.title} (₱${price}).`);
     }
-  }, [prefillProduct, messages.length, loading, router]);
+  }, [prefillProduct, messages.length, loading]);
 
   const fetchMessages = useCallback(async () => {
-    const res = await getMessagesAction(roomId);
+    if (!guestId) return;
+    const res = await getMessagesAction(roomId, guestId);
     if (res.messages) {
       const fetched = res.messages as Message[];
 
-      // Check if there are new messages from the Admin
       setMessages((prev) => {
         if (prev.length > 0 && fetched.length > prev.length) {
           const newMessages = fetched.slice(prev.length);
-          const hasReply = newMessages.some(m => m.senderId !== currentUserId);
+          const hasReply = newMessages.some(m => m.isAdmin);
 
           if (hasReply) {
             setIsTyping(true);
             setTimeout(() => {
               setIsTyping(false);
               setMessages(fetched);
-            }, 1500); // Show typing animation for 1.5s
-            return prev; // Don't update state yet, wait for timeout
+            }, 1500);
+            return prev;
           }
         }
         return fetched;
       });
     }
     setLoading(false);
-  }, [roomId, currentUserId]);
+  }, [roomId, guestId]);
 
   // Initial Load & Polling
   useEffect(() => {
+    if (!guestId) return;
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, [fetchMessages]);
+  }, [fetchMessages, guestId]);
 
-  // Scroll to bottom when new messages arrive or when typing indicator appears
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length, isTyping]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || sending) return;
+    if (!input.trim() || sending || !guestId) return;
 
     const textToSend = input.trim();
-    setInput(''); // Optimistic clear
+    setInput('');
     setSending(true);
 
-    // Optimistic UI Update
     const optimisticMsg: Message = {
       id: Math.random().toString(),
       text: textToSend,
-      senderId: currentUserId,
+      guestId: guestId,
+      isAdmin: false,
       createdAt: new Date(),
-      sender: { role: 'CUSTOMER' }
     };
     setMessages(prev => [...prev, optimisticMsg]);
 
-    const res = await sendMessageAction(roomId, textToSend);
+    const res = await sendMessageAction(roomId, textToSend, guestId);
     if (res.error) {
-      // Revert if error
       setInput(textToSend);
       setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
       alert(res.error);
     } else {
-      // Fetch fresh to get exact DB timestamp/id
       fetchMessages();
     }
 
     setSending(false);
   };
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-apple-gray" />
-      </div>
-    );
-  }
 
   const renderMessageText = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -131,28 +127,52 @@ export function CustomerChat({
     });
   };
 
+  if (loading && !guestId) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-apple-gray" />
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Storage Warning Banner */}
-      <div className="bg-yellow-50 text-yellow-800 text-xs px-4 py-2 border-b border-yellow-200 text-center font-medium flex-shrink-0">
-        Notice: Chats inactive for 7 days are automatically deleted to optimize storage.
+      {/* Cookie / Data Warning Banner */}
+      <div className="bg-amber-50 text-amber-900 text-xs px-4 py-3 border-b border-amber-200 flex-shrink-0">
+        <p className="font-semibold mb-1">⚠️ Your chat is tied to this browser.</p>
+        <p className="text-amber-800 leading-relaxed">
+          Clearing your browser data will disconnect you from this conversation. If you'd like to continue the discussion,
+          you can also reach us on{' '}
+          <a href={TIKTOK_URL} target="_blank" rel="noopener noreferrer" className="font-semibold underline inline-flex items-center gap-0.5">
+            TikTok <ExternalLink className="w-3 h-3" />
+          </a>
+          {' '}or{' '}
+          <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="font-semibold underline inline-flex items-center gap-0.5">
+            Facebook <ExternalLink className="w-3 h-3" />
+          </a>
+          . Chats inactive for 7 days are automatically deleted.
+        </p>
       </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#fafafa]">
-        {messages.length === 0 ? (
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-apple-gray" />
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-apple-gray">
             <p>Send a message to start negotiating.</p>
           </div>
         ) : (
           messages.map((msg) => {
-            const isMe = msg.senderId === currentUserId;
+            const isMe = !msg.isAdmin;
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[80%] px-4 py-3 rounded-2xl ${isMe
-                      ? 'bg-apple-blue text-white rounded-br-sm'
-                      : 'bg-white border border-black/5 text-apple-slate rounded-bl-sm shadow-sm'
+                    ? 'bg-apple-blue text-white rounded-br-sm'
+                    : 'bg-white border border-black/5 text-apple-slate rounded-bl-sm shadow-sm'
                     }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{renderMessageText(msg.text)}</p>

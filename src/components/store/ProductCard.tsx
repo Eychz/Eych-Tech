@@ -60,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div>
             <p className="text-xs font-semibold text-apple-gray uppercase tracking-wider mb-0.5">{product.condition}</p>
             <p className="font-semibold text-apple-slate text-lg">
-              ₱{Number(product.price).toFixed(2)}
+              ₱{Number(product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
             </p>
           </div>
 

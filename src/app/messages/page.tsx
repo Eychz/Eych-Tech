@@ -1,38 +1,17 @@
-import { verifySession } from '@/lib/session';
-import { redirect } from 'next/navigation';
-import { getOrCreateRoomAction } from '@/controllers/chat.controller';
 import { CustomerChat } from '@/components/chat/CustomerChat';
 import { ProductService } from '@/services/product.service';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { GuestChatLoader } from '@/components/chat/GuestChatLoader';
 
 export default async function MessagesPage({
   searchParams,
 }: {
   searchParams: { product?: string };
 }) {
-  const session = await verifySession();
-
-  if (!session || !session.userId) {
-    redirect('/login?redirect=/messages');
-  }
-
   // Admins should use the admin dashboard for chatting
-  if (session.role === 'ADMIN') {
-    redirect('/admin/messages');
-  }
+  // (Admin layout handles auth — if admin visits /messages it still works but they see guest chat)
 
-  const { roomId, error } = await getOrCreateRoomAction();
-
-  if (error || !roomId) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <p className="text-apple-gray">Error loading chat room: {error}</p>
-      </div>
-    );
-  }
-
-  // Await searchParams in Next 15
   const sp = await searchParams;
   let prefillProduct = null;
 
@@ -40,9 +19,8 @@ export default async function MessagesPage({
     const p = await ProductService.getProductById(sp.product);
     if (p) {
       prefillProduct = {
-        ...p,
+        title: p.title,
         price: Number(p.price),
-        slug: `${p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${p.id}`
       };
     }
   }
@@ -59,11 +37,12 @@ export default async function MessagesPage({
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-apple-slate">Eych Tech</h1>
-        <p className="text-apple-gray text-sm">We typically reply within a few minutes. If you don't see a reply, we may be offline. We will get back to you as soon as possible.</p>
+        <p className="text-apple-gray text-sm">We typically reply within a few minutes. If you don&apos;t see a reply, we may be offline.</p>
       </div>
 
       <div className="flex-1 bg-white rounded-[2rem] shadow-sm border border-black/5 overflow-hidden flex flex-col min-h-[500px]">
-        <CustomerChat roomId={roomId} prefillProduct={prefillProduct} currentUserId={session.userId} />
+        {/* GuestChatLoader handles guestId on client side, then renders CustomerChat */}
+        <GuestChatLoader prefillProduct={prefillProduct} />
       </div>
     </div>
   );

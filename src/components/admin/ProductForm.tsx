@@ -162,7 +162,7 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
                 <input type="text" name="title" defaultValue={initialData?.title} required className="w-full bg-apple-bg px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-apple-blue/20" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-apple-slate mb-2">Price ($)</label>
+                <label className="block text-sm font-medium text-apple-slate mb-2">Price (₱)</label>
                 <input type="number" step="0.01" name="price" defaultValue={initialData?.price} required className="w-full bg-apple-bg px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-apple-blue/20" />
               </div>
             </div>

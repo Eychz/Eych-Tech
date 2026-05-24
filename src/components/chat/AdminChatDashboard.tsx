@@ -7,16 +7,17 @@ import { Send, Loader2, User } from 'lucide-react';
 type Room = {
   id: string;
   updatedAt: Date;
-  customer: { email: string };
+  guestId: string;
+  guestName: string;
   messages: { text: string, createdAt: Date }[];
 };
 
 type Message = {
   id: string;
   text: string;
-  senderId: string;
+  guestId: string | null;
+  isAdmin: boolean;
   createdAt: Date;
-  sender: { role: 'ADMIN' | 'CUSTOMER' };
 };
 
 export function AdminChatDashboard() {
@@ -46,18 +47,18 @@ export function AdminChatDashboard() {
     if (res.messages) {
       const fetched = res.messages as Message[];
       
-      // Check if there are new messages from the Customer
+      // Check if there are new messages from the Guest
       setMessages((prev) => {
         if (prev.length > 0 && fetched.length > prev.length) {
           const newMessages = fetched.slice(prev.length);
-          const hasReply = newMessages.some(m => m.sender.role !== 'ADMIN');
+          const hasReply = newMessages.some(m => !m.isAdmin);
           
           if (hasReply) {
             setIsTyping(true);
             setTimeout(() => {
               setIsTyping(false);
               setMessages(fetched);
-            }, 1500); // Show typing animation for 1.5s
+            }, 1500);
             return prev;
           }
         }
@@ -99,9 +100,9 @@ export function AdminChatDashboard() {
     const optimisticMsg: Message = {
       id: Math.random().toString(),
       text: textToSend,
-      senderId: 'admin', // placeholder
+      guestId: null,
+      isAdmin: true,
       createdAt: new Date(),
-      sender: { role: 'ADMIN' }
     };
     setMessages(prev => [...prev, optimisticMsg]);
 
@@ -164,7 +165,7 @@ export function AdminChatDashboard() {
                     <User className="w-4 h-4" />
                   </div>
                   <div className="flex-1 truncate font-medium text-sm text-apple-slate">
-                    {room.customer.email}
+                    {room.guestName}
                   </div>
                 </div>
                 <div className="pl-11 pr-2 truncate text-xs text-apple-gray">
@@ -196,7 +197,7 @@ export function AdminChatDashboard() {
                   <User className="w-4 h-4" />
                 </div>
                 <div className="font-semibold text-apple-slate text-sm">
-                  {rooms.find(r => r.id === activeRoomId)?.customer.email}
+                  {rooms.find(r => r.id === activeRoomId)?.guestName}
                 </div>
               </div>
               <div className="bg-yellow-50 text-yellow-800 text-[10px] px-2.5 py-1 rounded-md font-medium border border-yellow-200 text-center sm:text-left">
@@ -212,7 +213,7 @@ export function AdminChatDashboard() {
                 </div>
               ) : (
                 messages.map((msg) => {
-                  const isAdmin = msg.sender.role === 'ADMIN';
+                  const isAdmin = msg.isAdmin;
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
                       <div 

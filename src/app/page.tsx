@@ -19,11 +19,6 @@ export default async function Home() {
           <Link href="/shop" className="bg-apple-blue hover:bg-apple-blue-hover text-white px-6 py-3 rounded-full font-medium transition-colors">
             Shop Now
           </Link>
-          {!session && (
-            <Link href="/login" className="text-apple-blue hover:underline font-medium flex items-center gap-1">
-              Sign In <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
         </div>
 
         {/* Hero Image */}
