@@ -15,6 +15,7 @@ export function MobileMenu() {
     { href: '/pad', label: 'Pad' },
     { href: '/phone', label: 'Phone' },
     { href: '/proofs', label: 'Transactions' },
+    { href: '/how-to-order', label: 'How to Order' },
   ];
 
   const handleLinkClick = () => {
