@@ -38,7 +38,7 @@ export function CustomerChat({
     setGuestId(id);
   }, []);
 
-  const sentPrefill = useRef(false);
+  const sentPrefill = useRef<string | null>(null);
 
   const fetchMessages = useCallback(async () => {
     if (!guestId) return;
@@ -68,8 +68,13 @@ export function CustomerChat({
 
   // Automatically send product inquiry message when product is passed
   useEffect(() => {
-    if (prefillProduct && messages.length === 0 && !loading && !sentPrefill.current && guestId) {
-      sentPrefill.current = true;
+    if (!prefillProduct || loading || !guestId) return;
+
+    // Check if the user already inquired about this specific product in the chat history
+    const alreadyInquired = messages.some(m => m.product?.id === prefillProduct.id);
+
+    if (!alreadyInquired && sentPrefill.current !== prefillProduct.id) {
+      sentPrefill.current = prefillProduct.id;
       const textToSend = "Hi! I'm interested in negotiating for this item.";
       
       const optimisticMsg: Message = {
@@ -91,6 +96,7 @@ export function CustomerChat({
       sendMessageAction(roomId, textToSend, guestId, prefillProduct.id).then(res => {
         if (res.error) {
           setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+          sentPrefill.current = null; // Reset so they can try again if it failed
           alert(res.error);
         } else {
           fetchMessages();
@@ -98,7 +104,7 @@ export function CustomerChat({
         setSending(false);
       });
     }
-  }, [prefillProduct, messages.length, loading, guestId, roomId, fetchMessages]);
+  }, [prefillProduct, messages, loading, guestId, roomId, fetchMessages]);
 
   // Initial Load & Polling
   useEffect(() => {
