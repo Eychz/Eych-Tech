@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { checkUnreadMessagesAction } from '@/controllers/chat.controller';
 import { getOrCreateGuestId } from '@/lib/guestId';
+import { supabase } from '@/lib/supabase';
 
 export function FloatingChatHead() {
   const pathname = usePathname();
@@ -31,8 +32,24 @@ export function FloatingChatHead() {
     };
 
     checkUnread();
-    const interval = setInterval(checkUnread, 15000); // Check every 15s
-    return () => clearInterval(interval);
+    const guestId = getOrCreateGuestId();
+
+    const channel = (window as any).supabaseClient || supabase
+      .channel(`public:Message:guestId=eq.${guestId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'Message' },
+        (payload) => {
+          if (payload.new.guestId === guestId && payload.new.isAdmin) {
+             checkUnread();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [pathname]);
 
   // Don't show the floating chat head if we are already on the messages page or in admin

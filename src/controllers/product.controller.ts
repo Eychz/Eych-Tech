@@ -3,7 +3,7 @@
 import { ProductService } from '@/services/product.service';
 import { productSchema, updateProductSchema } from '@/schemas/product.schema';
 import { verifySession } from '@/lib/session';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 async function requireAdmin() {
   const session = await verifySession();
@@ -24,6 +24,7 @@ export async function createProductAction(data: unknown) {
     await ProductService.createProduct(result.data);
     revalidatePath('/admin');
     revalidatePath('/');
+    revalidateTag('products', 'max');
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to create product' };
@@ -42,6 +43,7 @@ export async function updateProductAction(id: string, data: unknown) {
     await ProductService.updateProduct(id, result.data);
     revalidatePath('/admin');
     revalidatePath('/');
+    revalidateTag('products', 'max');
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to update product' };
@@ -55,6 +57,7 @@ export async function deleteProductAction(id: string) {
     await ProductService.softDeleteProduct(id);
     revalidatePath('/admin');
     revalidatePath('/');
+    revalidateTag('products', 'max');
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to delete product' };

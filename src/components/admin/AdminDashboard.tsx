@@ -6,6 +6,7 @@ import { deleteProductAction } from '@/controllers/product.controller';
 import { useToast } from '@/components/ui/Toast';
 import { Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 type AdminDashboardProps = {
   products: any[];
@@ -31,8 +32,23 @@ export function AdminDashboard({ products }: AdminDashboardProps) {
       } catch (e) {}
     };
     checkUnread();
-    const interval = setInterval(checkUnread, 15000);
-    return () => clearInterval(interval);
+
+    const channel = (window as any).supabaseClient || supabase
+      .channel('public:Message')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'Message' },
+        (payload) => {
+          if (!payload.new.isAdmin) {
+             checkUnread();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleEdit = (product: any) => {

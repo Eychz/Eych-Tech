@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { getMessagesAction, sendMessageAction } from '@/controllers/chat.controller';
 import { Send, Loader2, ExternalLink } from 'lucide-react';
 import { getOrCreateGuestId } from '@/lib/guestId';
+import { supabase } from '@/lib/supabase';
 
 type Message = {
   id: string;
@@ -106,7 +107,7 @@ export function CustomerChat({
     }
   }, [prefillProduct, messages, loading, guestId, roomId, fetchMessages]);
 
-  // Initial Load & Polling & Read Status Tracking
+  // Initial Load & Read Status Tracking
   useEffect(() => {
     if (!guestId) return;
 
@@ -117,13 +118,23 @@ export function CustomerChat({
     fetchMessages();
     trackReadStatus();
 
-    const interval = setInterval(() => {
-      fetchMessages();
-      trackReadStatus();
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [fetchMessages, guestId]);
+    // Supabase Realtime Subscription
+    const channel = (window as any).supabaseClient || supabase
+      .channel(`public:Message:chatRoomId=eq.${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'Message', filter: `chatRoomId=eq.${roomId}` },
+        () => {
+          fetchMessages();
+          trackReadStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchMessages, guestId, roomId]);
 
   // Scroll function to be called manually on input focus
   const scrollToBottom = () => {

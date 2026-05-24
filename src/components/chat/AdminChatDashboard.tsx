@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getAdminRoomsAction, getMessagesAction, sendMessageAction } from '@/controllers/chat.controller';
 import { Send, Loader2, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type Room = {
   id: string;
@@ -69,7 +70,7 @@ export function AdminChatDashboard() {
     setLoadingMessages(false);
   }, [activeRoomId]);
 
-  // Global Polling & Read Status Tracking
+  // Global Realtime Subscription & Read Status Tracking
   useEffect(() => {
     const trackReadStatus = () => {
       localStorage.setItem('admin_chat_last_read', new Date().toISOString());
@@ -79,12 +80,22 @@ export function AdminChatDashboard() {
     fetchMessages();
     trackReadStatus();
 
-    const interval = setInterval(() => {
-      fetchRooms();
-      fetchMessages();
-      trackReadStatus();
-    }, 5000); // Changed to 5 seconds
-    return () => clearInterval(interval);
+    const channel = (window as any).supabaseClient || supabase
+      .channel('public:Message')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'Message' },
+        () => {
+          fetchRooms();
+          fetchMessages();
+          trackReadStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchRooms, fetchMessages]);
 
   // Scroll function to be called manually on input focus
