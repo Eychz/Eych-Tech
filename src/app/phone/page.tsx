@@ -13,7 +13,7 @@ export default async function PhonePage({
 }) {
   const sp = await searchParams;
   const currentPage = Math.max(1, parseInt(sp.page || '1', 10));
-  const allProducts = await ProductService.getStoreProducts('PHONE', sp.q);
+  const allProducts = await ProductService.getStoreProducts('PHONE', sp.q, false);
 
   const totalPages = Math.ceil(allProducts.length / ITEMS_PER_PAGE);
   const products = allProducts.slice(

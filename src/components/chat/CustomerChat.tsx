@@ -79,10 +79,10 @@ export function CustomerChat({
     return () => clearInterval(interval);
   }, [fetchMessages, guestId]);
 
-  // Scroll to bottom
-  useEffect(() => {
+  // Scroll function to be called manually on input focus
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, isTyping]);
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +206,7 @@ export function CustomerChat({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onFocus={scrollToBottom}
             placeholder="Type your message..."
             className="flex-1 bg-apple-bg px-4 py-3 rounded-full text-sm outline-none focus:ring-2 focus:ring-apple-blue/20 transition-all text-apple-slate"
           />

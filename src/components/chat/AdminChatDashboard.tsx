@@ -79,10 +79,10 @@ export function AdminChatDashboard() {
     return () => clearInterval(interval);
   }, [fetchRooms, fetchMessages]);
 
-  // Scroll to bottom when new messages arrive or typing
-  useEffect(() => {
+  // Scroll function to be called manually on input focus
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, isTyping]);
+  };
 
   const handleRoomSelect = (roomId: string) => {
     setActiveRoomId(roomId);
@@ -254,6 +254,7 @@ export function AdminChatDashboard() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onFocus={scrollToBottom}
                   placeholder="Type your reply..."
                   className="flex-1 bg-apple-bg px-4 py-3 rounded-full text-sm outline-none focus:ring-2 focus:ring-apple-blue/20 transition-all text-apple-slate"
                 />
