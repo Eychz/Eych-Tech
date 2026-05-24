@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductForm } from './ProductForm';
 import { deleteProductAction } from '@/controllers/product.controller';
 import { useToast } from '@/components/ui/Toast';
@@ -14,8 +14,26 @@ type AdminDashboardProps = {
 export function AdminDashboard({ products }: AdminDashboardProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [hasUnreadChat, setHasUnreadChat] = useState(false);
   const { showToast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    const checkUnread = async () => {
+      try {
+        // We import dynamically or we can just fetch. Since it's a server action, let's import it.
+        const { checkUnreadMessagesAction } = await import('@/controllers/chat.controller');
+        const lastRead = localStorage.getItem('admin_chat_last_read') || new Date(0).toISOString();
+        const res = await checkUnreadMessagesAction(lastRead);
+        if (res && res.hasUnread !== undefined) {
+          setHasUnreadChat(res.hasUnread);
+        }
+      } catch (e) {}
+    };
+    checkUnread();
+    const interval = setInterval(checkUnread, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleEdit = (product: any) => {
     setEditingProduct(product);
@@ -55,10 +73,16 @@ export function AdminDashboard({ products }: AdminDashboardProps) {
           </button>
           <button
             onClick={() => router.push('/admin/messages')}
-            className="bg-white hover:bg-black/5 text-apple-slate border border-black/10 px-5 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2 shadow-sm"
+            className="bg-white hover:bg-black/5 text-apple-slate border border-black/10 px-5 py-2.5 rounded-full font-medium transition-colors flex items-center gap-2 shadow-sm relative group"
           >
             <Package className="w-4 h-4 hidden" />
             Live Chat
+            {hasUnreadChat && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+              </span>
+            )}
           </button>
           <button
             onClick={() => setIsFormOpen(true)}

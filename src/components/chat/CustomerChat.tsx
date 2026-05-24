@@ -106,11 +106,22 @@ export function CustomerChat({
     }
   }, [prefillProduct, messages, loading, guestId, roomId, fetchMessages]);
 
-  // Initial Load & Polling
+  // Initial Load & Polling & Read Status Tracking
   useEffect(() => {
     if (!guestId) return;
+
+    const trackReadStatus = () => {
+      localStorage.setItem('customer_chat_last_read', new Date().toISOString());
+    };
+
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    trackReadStatus();
+
+    const interval = setInterval(() => {
+      fetchMessages();
+      trackReadStatus();
+    }, 5000);
+    
     return () => clearInterval(interval);
   }, [fetchMessages, guestId]);
 

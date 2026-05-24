@@ -155,3 +155,40 @@ export async function sendMessageAction(roomId: string, text: string, guestId?: 
 
   return { message };
 }
+
+/**
+ * Checks if there are any unread messages.
+ * For Admin: checks if any room has a message from a guest newer than lastReadAt.
+ * For Guest: checks if their room has a message from an admin newer than lastReadAt.
+ */
+export async function checkUnreadMessagesAction(lastReadAt: string, guestId?: string) {
+  const session = await verifySession();
+  const isAdmin = session?.role === 'ADMIN';
+
+  const lastReadDate = new Date(lastReadAt);
+
+  if (isAdmin) {
+    const unread = await prisma.message.findFirst({
+      where: {
+        isAdmin: false,
+        createdAt: { gt: lastReadDate },
+      },
+      select: { id: true },
+    });
+    return { hasUnread: !!unread };
+  }
+
+  if (guestId) {
+    const unread = await prisma.message.findFirst({
+      where: {
+        guestId: guestId,
+        isAdmin: true,
+        createdAt: { gt: lastReadDate },
+      },
+      select: { id: true },
+    });
+    return { hasUnread: !!unread };
+  }
+
+  return { hasUnread: false };
+}

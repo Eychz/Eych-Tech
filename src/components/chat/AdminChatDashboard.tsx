@@ -69,13 +69,20 @@ export function AdminChatDashboard() {
     setLoadingMessages(false);
   }, [activeRoomId]);
 
-  // Global Polling
+  // Global Polling & Read Status Tracking
   useEffect(() => {
+    const trackReadStatus = () => {
+      localStorage.setItem('admin_chat_last_read', new Date().toISOString());
+    };
+
     fetchRooms();
     fetchMessages();
+    trackReadStatus();
+
     const interval = setInterval(() => {
       fetchRooms();
       fetchMessages();
+      trackReadStatus();
     }, 5000); // Changed to 5 seconds
     return () => clearInterval(interval);
   }, [fetchRooms, fetchMessages]);
