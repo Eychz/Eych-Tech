@@ -51,7 +51,18 @@ export async function getAdminRoomsAction() {
     },
   });
 
-  return { rooms };
+  const plainRooms = rooms.map(room => ({
+    ...room,
+    messages: room.messages.map(msg => ({
+      ...msg,
+      product: msg.product ? {
+        ...msg.product,
+        price: Number(msg.product.price)
+      } : null
+    }))
+  }));
+
+  return { rooms: plainRooms };
 }
 
 /**
@@ -94,7 +105,15 @@ export async function getMessagesAction(roomId: string, guestId?: string) {
     }
   });
 
-  return { messages };
+  const plainMessages = messages.map(msg => ({
+    ...msg,
+    product: msg.product ? {
+      ...msg.product,
+      price: Number(msg.product.price)
+    } : null
+  }));
+
+  return { messages: plainMessages };
 }
 
 /**
@@ -153,7 +172,15 @@ export async function sendMessageAction(roomId: string, text: string, guestId?: 
     data: { updatedAt: new Date() },
   });
 
-  return { message };
+  const plainMessage = {
+    ...message,
+    product: message.product ? {
+      ...message.product,
+      price: Number(message.product.price)
+    } : null
+  };
+
+  return { message: plainMessage };
 }
 
 /**
