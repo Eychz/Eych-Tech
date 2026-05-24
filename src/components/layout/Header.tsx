@@ -4,6 +4,7 @@ import { verifySession } from '@/lib/session';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { SearchBar } from '@/components/layout/SearchBar';
 import { MobileMenu } from '@/components/layout/MobileMenu';
+import { GadgetDropdown } from '@/components/layout/GadgetDropdown';
 
 export async function Header() {
   const session = await verifySession();
@@ -27,9 +28,7 @@ export async function Header() {
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-wide">
             <Link href="/shop" className="text-apple-slate hover:text-apple-blue transition-colors">Shop</Link>
-            <Link href="/laptop" className="text-apple-slate hover:text-apple-blue transition-colors">Laptop</Link>
-            <Link href="/pad" className="text-apple-slate hover:text-apple-blue transition-colors">Pad</Link>
-            <Link href="/phone" className="text-apple-slate hover:text-apple-blue transition-colors">Phone</Link>
+            <GadgetDropdown />
             <Link href="/proofs" className="text-apple-slate hover:text-apple-blue transition-colors">Transactions</Link>
             <Link href="/how-to-order" className="text-apple-slate hover:text-apple-blue transition-colors">How to Order</Link>
             <Link href="/sell-gadget" className="text-apple-slate hover:text-apple-blue transition-colors">Sell my Gadget</Link>
