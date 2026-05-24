@@ -55,6 +55,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export const useToast = () => {
   const context = useContext(ToastContext);
-  if (!context) throw new Error('useToast must be used within ToastProvider');
+  if (!context) {
+    // Return a fallback during SSR or if context is missing
+    return { showToast: (message: string, type?: ToastType) => console.warn('Toast:', message, type) };
+  }
   return context;
 };
