@@ -18,6 +18,7 @@ type Message = {
   guestId: string | null;
   isAdmin: boolean;
   createdAt: Date;
+  product?: { id: string; title: string; price: any; images: string[] } | null;
 };
 
 export function AdminChatDashboard() {
@@ -120,6 +121,7 @@ export function AdminChatDashboard() {
   };
 
   const renderMessageText = (text: string) => {
+    if (!text) return null;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.split(urlRegex).map((part, i) => {
       if (part.match(urlRegex)) {
@@ -223,7 +225,22 @@ export function AdminChatDashboard() {
                             : 'bg-white border border-black/5 text-apple-slate rounded-bl-sm shadow-sm'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{renderMessageText(msg.text)}</p>
+                        {msg.product && (
+                          <a href={`/product/${msg.product.id}`} target="_blank" rel="noopener noreferrer" className="block mb-3 bg-white text-apple-slate rounded-lg overflow-hidden border border-black/10 hover:shadow-md transition-shadow max-w-[240px]">
+                            {msg.product.images?.[0] && (
+                              <div className="w-full h-32 bg-apple-bg relative">
+                                <img src={msg.product.images[0]} alt={msg.product.title} className="object-cover w-full h-full" />
+                              </div>
+                            )}
+                            <div className="p-3">
+                              <div className="font-semibold text-sm truncate">{msg.product.title}</div>
+                              <div className="text-apple-blue font-medium text-xs mt-1">
+                                ₱{Number(msg.product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              </div>
+                            </div>
+                          </a>
+                        )}
+                        {msg.text && <p className="text-sm whitespace-pre-wrap">{renderMessageText(msg.text)}</p>}
                         <p className={`text-[10px] mt-1 ${isAdmin ? 'text-white/70 text-right' : 'text-apple-gray'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>

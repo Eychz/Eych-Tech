@@ -42,6 +42,11 @@ export async function getAdminRoomsAction() {
       messages: {
         orderBy: { createdAt: 'desc' },
         take: 1,
+        include: {
+          product: {
+            select: { id: true, title: true, price: true, images: true }
+          }
+        }
       },
     },
   });
@@ -77,6 +82,16 @@ export async function getMessagesAction(roomId: string, guestId?: string) {
   const messages = await prisma.message.findMany({
     where: { chatRoomId: roomId },
     orderBy: { createdAt: 'asc' },
+    include: {
+      product: {
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          images: true,
+        }
+      }
+    }
   });
 
   return { messages };
@@ -86,7 +101,7 @@ export async function getMessagesAction(roomId: string, guestId?: string) {
  * Sends a new message in the ChatRoom.
  * Guest sends with guestId; Admin sends with session.
  */
-export async function sendMessageAction(roomId: string, text: string, guestId?: string) {
+export async function sendMessageAction(roomId: string, text: string, guestId?: string, productId?: string) {
   const session = await verifySession();
   const isAdmin = session?.role === 'ADMIN';
 
@@ -94,7 +109,7 @@ export async function sendMessageAction(roomId: string, text: string, guestId?: 
     return { error: 'Unauthorized' };
   }
 
-  if (!text.trim()) {
+  if (!text.trim() && !productId) {
     return { error: 'Message cannot be empty' };
   }
 
@@ -117,8 +132,19 @@ export async function sendMessageAction(roomId: string, text: string, guestId?: 
       chatRoomId: roomId,
       senderId: isAdmin ? session!.userId : null,
       guestId: isAdmin ? null : guestId,
+      productId: productId || null,
       isAdmin: isAdmin,
     },
+    include: {
+      product: {
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          images: true,
+        }
+      }
+    }
   });
 
   // Update room's updatedAt timestamp

@@ -19,8 +19,10 @@ export default async function MessagesPage({
     const p = await ProductService.getProductById(sp.product);
     if (p) {
       prefillProduct = {
+        id: p.id,
         title: p.title,
         price: Number(p.price),
+        images: p.images,
       };
     }
   }

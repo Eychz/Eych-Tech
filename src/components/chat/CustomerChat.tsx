@@ -11,6 +11,7 @@ type Message = {
   guestId: string | null;
   isAdmin: boolean;
   createdAt: Date;
+  product?: { id: string; title: string; price: any; images: string[] } | null;
 };
 
 const TIKTOK_URL = 'https://www.tiktok.com/@eych.tech';
@@ -21,7 +22,7 @@ export function CustomerChat({
   prefillProduct,
 }: {
   roomId: string;
-  prefillProduct?: { title: string; price: number } | null;
+  prefillProduct?: { id: string; title: string; price: number; images: string[] } | null;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -37,13 +38,7 @@ export function CustomerChat({
     setGuestId(id);
   }, []);
 
-  // Prefill message when product is passed
-  useEffect(() => {
-    if (prefillProduct && messages.length === 0 && !loading) {
-      const price = Number(prefillProduct.price).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-      setInput(`Hi! I'm interested in negotiating for the ${prefillProduct.title} (₱${price}).`);
-    }
-  }, [prefillProduct, messages.length, loading]);
+  const sentPrefill = useRef(false);
 
   const fetchMessages = useCallback(async () => {
     if (!guestId) return;
@@ -70,6 +65,40 @@ export function CustomerChat({
     }
     setLoading(false);
   }, [roomId, guestId]);
+
+  // Automatically send product inquiry message when product is passed
+  useEffect(() => {
+    if (prefillProduct && messages.length === 0 && !loading && !sentPrefill.current && guestId) {
+      sentPrefill.current = true;
+      const textToSend = "Hi! I'm interested in negotiating for this item.";
+      
+      const optimisticMsg: Message = {
+        id: Math.random().toString(),
+        text: textToSend,
+        guestId: guestId,
+        isAdmin: false,
+        createdAt: new Date(),
+        product: {
+          id: prefillProduct.id,
+          title: prefillProduct.title,
+          price: prefillProduct.price,
+          images: prefillProduct.images
+        }
+      };
+      setMessages(prev => [...prev, optimisticMsg]);
+      setSending(true);
+
+      sendMessageAction(roomId, textToSend, guestId, prefillProduct.id).then(res => {
+        if (res.error) {
+          setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+          alert(res.error);
+        } else {
+          fetchMessages();
+        }
+        setSending(false);
+      });
+    }
+  }, [prefillProduct, messages.length, loading, guestId, roomId, fetchMessages]);
 
   // Initial Load & Polling
   useEffect(() => {
@@ -114,6 +143,7 @@ export function CustomerChat({
   };
 
   const renderMessageText = (text: string) => {
+    if (!text) return null;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.split(urlRegex).map((part, i) => {
       if (part.match(urlRegex)) {
@@ -175,7 +205,22 @@ export function CustomerChat({
                     : 'bg-white border border-black/5 text-apple-slate rounded-bl-sm shadow-sm'
                     }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{renderMessageText(msg.text)}</p>
+                  {msg.product && (
+                    <a href={`/product/${msg.product.id}`} target="_blank" rel="noopener noreferrer" className="block mb-3 bg-white text-apple-slate rounded-lg overflow-hidden border border-black/10 hover:shadow-md transition-shadow max-w-[240px]">
+                      {msg.product.images?.[0] && (
+                        <div className="w-full h-32 bg-apple-bg relative">
+                          <img src={msg.product.images[0]} alt={msg.product.title} className="object-cover w-full h-full" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <div className="font-semibold text-sm truncate">{msg.product.title}</div>
+                        <div className="text-apple-blue font-medium text-xs mt-1">
+                          ₱{Number(msg.product.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </a>
+                  )}
+                  {msg.text && <p className="text-sm whitespace-pre-wrap">{renderMessageText(msg.text)}</p>}
                   <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70 text-right' : 'text-apple-gray'}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>

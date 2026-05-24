@@ -65,6 +65,8 @@ model Product {
   isFeatured    Boolean             @default(false)
   createdAt     DateTime            @default(now())
   deletedAt     DateTime?
+
+  messages      Message[]
 }
 
 model ChatRoom {
@@ -82,12 +84,14 @@ model Message {
   chatRoomId String
   senderId   String?  // Admin's userId (null for guest messages)
   guestId    String?  // Guest UUID (null for admin messages)
+  productId  String?  // Associated product ID for item inquiries
   isAdmin    Boolean  @default(false)
   text       String
   createdAt  DateTime @default(now())
 
   chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
   sender     User?    @relation(fields: [senderId], references: [id])
+  product    Product? @relation(fields: [productId], references: [id])
 }
 
 model ProofOfTransaction {

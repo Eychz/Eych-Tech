@@ -7,7 +7,7 @@ import { getOrCreateGuestId } from '@/lib/guestId';
 import { Loader2 } from 'lucide-react';
 
 type GuestChatLoaderProps = {
-  prefillProduct?: { title: string; price: number } | null;
+  prefillProduct?: { id: string; title: string; price: number; images: string[] } | null;
 };
 
 export function GuestChatLoader({ prefillProduct }: GuestChatLoaderProps) {
